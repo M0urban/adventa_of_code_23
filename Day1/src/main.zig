@@ -29,7 +29,14 @@ fn part1(input: []const u8) usize {
     return sum;
 }
 
+fn part2(input: []const u8) usize {
+    var lines = std.mem.tokenizeAny(u8, input, "\n");
+    var sum: usize = 0;
+
+    while (lines.next()) |line| {
         _ = line;
 
     }
+    return sum;
 }
+
