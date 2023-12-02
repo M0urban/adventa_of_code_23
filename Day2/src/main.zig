@@ -13,6 +13,7 @@ pub fn main() !void {
     try reader.readAllArrayList(&buffer, std.math.maxInt(usize));
     std.debug.print("\nhello world", .{});
     std.debug.print("\npart 1: {}", .{part1(buffer.items)});
+    std.debug.print("\npart 2: {}", .{part2(buffer.items)});
 }
 
 fn part1(input: []u8) usize {
@@ -56,6 +57,50 @@ fn part1(input: []u8) usize {
             if (red <= 12 and green <= 13 and blue <= 14) {
                 score += idx;
             }
+        }
+    }
+    return score;
+}
+
+fn part2(input: []u8) usize {
+    var lines = std.mem.splitAny(u8, input, "\n");
+    var score: usize = 0;
+    var idx: usize = 1;
+    while (lines.next()) |line| : (idx += 1) {
+        if (line.len != 0) {
+            const after_header = std.mem.indexOf(u8, line, ": ").? + 2;
+            var games = std.mem.splitSequence(u8, line[after_header..], "; ");
+            var green: usize = 0;
+            var red: usize = 0;
+            var blue: usize = 0;
+            while (games.next()) |game| {
+                var colors = std.mem.splitSequence(u8, game, ", ");
+                while (colors.next()) |color| {
+                    const space = std.mem.indexOf(u8, color, " ").?;
+                    const num = std.fmt.parseInt(usize, color[0..space], 10) catch unreachable;
+                    switch (color[space + 1]) {
+                        'b' => {
+                            if (blue < num) {
+                                blue = num;
+                            }
+                        },
+                        'r' => {
+                            if (red < num) {
+                                red = num;
+                            }
+                        },
+                        'g' => {
+                            if (green < num) {
+                                green = num;
+                            }
+                        },
+                        else => {
+                            unreachable;
+                        },
+                    }
+                }
+            }
+            score += red * blue * green;
         }
     }
     return score;
