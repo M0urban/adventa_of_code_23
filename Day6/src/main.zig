@@ -28,7 +28,7 @@ fn part1(input: []const u8, alloc: std.mem.Allocator) usize {
     var distance = lines.next().?;
 
     //find first difit of
-    var after_header = std.mem.indexOfAny(u8, input, "0123456789").?;
+    var after_header = std.mem.indexOfAny(u8, duration, "0123456789").?;
     var list_of_durations = std.ArrayList(usize).init(alloc);
     defer list_of_durations.deinit();
     var numbers = std.mem.splitScalar(u8, duration[after_header..], ' ');
@@ -39,7 +39,7 @@ fn part1(input: []const u8, alloc: std.mem.Allocator) usize {
         }
     }
     //find distances
-    after_header = std.mem.indexOfAny(u8, input, "0123456789").?;
+    after_header = std.mem.indexOfAny(u8, distance, "0123456789").?;
     var list_of_distances = std.ArrayList(usize).init(alloc);
     defer list_of_distances.deinit();
     numbers = std.mem.splitScalar(u8, distance[after_header..], ' ');
@@ -49,12 +49,13 @@ fn part1(input: []const u8, alloc: std.mem.Allocator) usize {
             list_of_distances.append(parsed) catch unreachable;
         }
     }
+    std.debug.print("\ntimes:    {any}\ndistances:{any}", .{ list_of_durations.items, list_of_distances.items });
     for (0..list_of_durations.items.len) |idx| {
         const cur_rec = list_of_distances.items[idx];
         const cur_duration = list_of_durations.items[idx];
         for (0..cur_rec) |charge_time| {
             if (charge_time * (cur_duration - charge_time) > cur_rec) {
-                const winners = cur_duration - 2 * (charge_time - 1) - 1;
+                const winners = (cur_duration + 1) - 2 * (charge_time);
                 score *= winners;
                 std.debug.print("\n\n{any}", .{winners});
                 break;
