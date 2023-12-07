@@ -34,13 +34,61 @@ const Hand = struct {
         pub fn order(rhs: Strength, lhs: Strength) std.math.Order {
             return std.math.order(rhs, lhs);
         }
+        pub fn lessThan(context: void, lhs: Strength, rhs: Strength) bool {
+            return std.sort.asc(@typeInfo(Value).Enum.tag_type)(context, @intFromEnum(lhs), @intFromEnum(rhs));
+        }
     };
 
-    pub const Value = enum(u8){
-        A, K, Q, J, T, 9, 8, 7, 6, 5, 4, 3, 2
+    pub const Value = enum(u8) {
+        N2 = 0,
+        N3,
+        N4,
+        N5,
+        N6,
+        N7,
+        N8,
+        N9,
+        T,
+        J,
+        Q,
+        K,
+        A,
+
+        pub fn parseFromChar(chr: u8) std.fmt.ParseIntError!Value {
+            inline for (@typeInfo(Value).Enum.fields) |field| {
+                if (field.name.len == 2) {
+                    if (field.name[1] == chr) {
+                        return field;
+                    }
+                } else if (field.name[0] == chr) {
+                    return field;
+                } else {
+                    return std.fmt.ParseIntError.InvalidCharacter;
+                }
+            }
+        }
     };
+
+    const Self = @This();
     stren: Strength,
-    cards: [5]u8,
+    cards: [5]Value,
+    bid: usize,
+
+    pub fn parseLine(line: []const u8) Self {
+        var hand = std.mem.trimRight(u8, line, " ");
+        var bid = std.mem.trimLeft(u8, line, " ");
+        var cards: [5]Value = undefined;
+        for (hand, 0..) |card, idx| {
+            cards[idx] = Value.parseFromChar(card) catch unreachable;
+        }
+
+        const parsed = std.fmt.parseInt(usize, bid, 10) catch unreachable;
+        return Self{
+            .stren = Strength.FiveOfAKind,
+            .cards = cards,
+            .bid = parsed,
+        };
+    }
 };
 fn part1(input: []u8, alloc: std.mem.Allocator) usize {
     _ = alloc;
