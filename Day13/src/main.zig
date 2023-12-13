@@ -47,7 +47,7 @@ fn part1(input: []const u8, alloc: std.mem.Allocator) usize {
         while (lines.next()) |line| {
             list.appendSlice(line) catch unreachable;
         }
-        const num_of_lines: usize = lines.items.len / line_len;
+        const num_of_lines: usize = list.items.len / line_len;
         //first check for horizontal line
 
         const mirror: ?Mirrorline = horizontal: for (0..num_of_lines - 2) |line| {
@@ -64,18 +64,103 @@ fn part1(input: []const u8, alloc: std.mem.Allocator) usize {
         } else {
             //loop ignore mirrorline between last two, to avoid extra bound check
             //In case no Mirrorline has been found yet, it has to be checked now
-            const begin_last: usize = list.led - line_len;
+            const begin_last: usize = list.items.len - line_len;
             const begin_before_last: usize = begin_last - line_len;
             if (std.mem.eql(u8, list.items[begin_before_last..begin_last], list.items[begin_last..])) {
-                break :horizontal Mirrorline{ .Between = list.len - 1 };
+                break :horizontal Mirrorline{ .Between = list.items.len - 1 };
             } else {
                 break :horizontal null;
             }
         };
         //check if horizontal mirroline was found to evaluate score
-        if (mirror != null) {}
-    }
+        if (mirror) |refl| {
+            var first_refl: usize = 0;
+            var last_refl: usize = 0;
+            switch (refl) {
+                Mirrorline.Between => |first| {
+                    first_refl = first;
+                    last_refl = first + 1;
+                },
+                Mirrorline.On => |first| {
+                    first_refl = first;
+                    last_refl = first + 2;
+                },
+            }
+            //while next lines are still in bound
+            refl: while (first_refl > 0 or last_refl < num_of_lines - 1) {
+                const begin_first = (first_refl - 1) * line_len;
+                const begin_last = (last_refl + 1) * line_len;
+                //check if next lines are equal
+                if (!std.mem.eql(u8, list.items[begin_first .. begin_first + line_len], list.items[begin_last .. begin_last + line_len])) {
+                    break :refl;
+                }
+                first_refl -= 1;
+                last_refl += 1;
+            }
+            //calcualte number of reflected lines by taking difference of closest to line minus farthest to line
+            // plus one
+            score += refl + 1;
+        } else {
+            const mir_vert: ?Mirrorline = vertical: for (0..line_len - 2) |col| {
+                var reflection_between: bool = next: for (0..num_of_lines) |line_nr| {
+                    const line_base = (line_len * line_nr) + col;
+                    if (list.items[line_base] != list.items[line_base + 1]) {
+                        break :next false;
+                    }
+                } else {
+                    break :next true;
+                };
+                if (reflection_between) {
+                    break :vertical Mirrorline{ .Between = col };
+                }
+                //checl if a reflection line is on the next line
+                reflection_between = next: for (0..num_of_lines) |line_nr| {
+                    const line_base = (line_len * line_nr) + col;
+                    if (list.items[line_base] != list.items[line_base + 2]) {
+                        break :next false;
+                    }
+                } else {
+                    break :next true;
+                };
 
+                if (reflection_between) {
+                    break :vertical Mirrorline{ .On = col };
+                } else {
+                    break :vertical null;
+                }
+            };
+
+            if (mir_vert) |refl| {
+                var last_refl = switch (refl) {
+                    Mirrorline.Between => |first| first + 1,
+                    Mirrorline.On => |first| first + 2,
+                };
+                //Make mutable copy of refl
+                var first_refl = refl;
+                //while next lines are still in bound
+                refl: while (first_refl > 0 or last_refl < line_len - 1) {
+                    //check if next collumns are equal
+                    const equal: bool = next: for (0..num_of_lines) |line_nr| {
+                        const line_base = (line_len * line_nr) + first_refl;
+                        if (list.items[line_base] != list.items[line_base + 1]) {
+                            break :next false;
+                        }
+                    } else {
+                        break :next false;
+                    };
+
+                    if (!equal) {
+                        break :refl;
+                    }
+                    first_refl -= 1;
+                    last_refl += 1;
+                }
+                //calcualte number of reflected lines by taking difference of closest to line minus farthest to line
+                // plus one
+                score += refl + 1;
+            }
+        }
+    }
     return score;
 }
 
