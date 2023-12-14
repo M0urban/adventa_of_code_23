@@ -35,9 +35,9 @@ fn part1(input: []const u8) usize {
 
     const line_len_lf = std.mem.indexOfScalar(u8, input, '\n').? + 1;
     std.io.getStdOut().writer().print("\ninput_len: {}, line_len: {}", .{ input.len, line_len_lf }) catch unreachable;
-    std.debug.assert(input.len % line_len_lf == line_len_lf - 1);
+    std.debug.assert(input.len % line_len_lf == 0);
     const line_len = line_len_lf - 1;
-    const line_ammount = (input.len / line_len_lf) + 1;
+    const line_ammount = (input.len / line_len_lf);
     for (0..line_len) |col| {
         var movable: usize = 0;
         var start: usize = 0;
@@ -84,6 +84,7 @@ test "p1" {
         \\.......O..
         \\#....###..
         \\#OO..#....
+        \\
     ;
     const expected: usize = 136;
     const actual: usize = part1(input);
