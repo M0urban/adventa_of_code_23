@@ -93,9 +93,89 @@ test "p1" {
 
 fn part2(input: []const u8, alloc: std.mem.Allocator) usize {
     var score: usize = 0;
-    _ = input;
-    _ = alloc;
-    score += 0;
+    var inputCpy = std.ArrayList(u8).init(alloc);
+
+    var lines = std.mem.splitScalar(u8, input, '\n');
+    const line_len = lines.peek().?.len;
+    var line_ammount = 0;
+    while(lines.next()) |line| {
+        if(line.len != 0) {
+            inputCpy.appendSlice(line) catch unreachable;
+            line_ammount += 1;
+        }
+    }
+
+    //varibles to keep track of last four board hashes
+    //when comparing the first and having 4 or more equala in a row
+    //we can assume there is a loop and the current board is the final
+    var last_four = [4]u64 {0} ** 4;
+    var consecutive_equals: u8 = 0;
+    var index_last_four = 0;
+
+    //here make loop moving, hashing, compare hashes until we are after north tilt and have a cycle
+    while(){}
 
     return score;
 }
+
+pub fn hash(input: []const u8) u64 { 
+     var hasher = std.hash.XxHash64.init(0); 
+     hasher.update(input); 
+     return hasher.final(); 
+ }
+
+fn moveX(comptime west_direction: bool, input: []u8, line_len: usize, line_ammount: usize) void {
+    //ascending means in this context that O will go to the right(positive x) and . to the left desc is the opposite
+    const sortFun = if(west_direction) std.sort.asc(u8) else std.sort.desc();
+    for(0..line_ammount) |line| {
+        const line_start = line * line_ammount;
+        var fields = std.mem.splitAny(u8, input[line_start..line_start + line_len], '#');
+        while(fields.next()) |field| {
+            std.mem.sort(u8, field, .{}, sortFun);
+        }
+    }
+}
+
+fn moveY(north_direction: bool, input: []u8, line_len: usize, line_ammount: usize) void {
+    for (0..line_len) |col| {
+        var movable: usize = 0;
+        var start: usize = 0;
+        var line_idx: usize = 0;
+        while (line_idx < line_ammount) : (line_idx += 1) {
+            switch (input[line_idx * line_len + col]) {
+                '.' => {},
+                'O' => {
+                    movable += 1;
+                },
+                '#' => {
+                    if (movable != 0) {
+                        for(0..line_idx - start) |idx| {
+                            if((north_direction and idx < movable) or (!north_direction and line_idx - idx <= movable)) {
+                                input[(start + idx) * line_len + col] = 'O';
+                            } else {
+                                input[(start + idx) * line_len + col] = '.';
+                            }
+                        }
+                        movable = 0;
+                    }
+                    start = line_idx + 1;
+                },
+                else => {
+                    unreachable;
+                },
+            }
+        }
+        //check if there is one final group
+        if (movable != 0) {
+            for(0..line_idx - start) |idx| {
+                if((north_direction and idx < movable) or (!north_direction and line_idx - idx <= movable)) {
+                    input[(start + idx) * line_len + col] = 'O';
+                } else {
+                    input[(start + idx) * line_len + col] = '.';
+                }
+            }
+            movable = 0;
+        }
+    }
+}
+
